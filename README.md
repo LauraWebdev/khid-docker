@@ -15,8 +15,7 @@ A simple docker container & web UI to download media from downloads.khinsider.co
 ```yaml
 services:
   server:
-    build:
-      context: .
+    image: "ghcr.io/laurawebdev/khid-docker:latest"
     environment:
       NODE_ENV: production
       OUTPUT_DIR: "/output"
