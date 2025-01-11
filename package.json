@@ -1,0 +1,11 @@
+{
+  "name": "khid-docker",
+  "version": "1.0.0",
+  "description": "When you're ready, start your application by running: `docker compose up --build`.",
+  "main": "server/app.js",
+  "scripts": {
+    "dev": ""
+  },
+  "author": "",
+  "license": "ISC"
+}
