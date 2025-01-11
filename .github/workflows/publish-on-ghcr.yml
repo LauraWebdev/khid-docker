@@ -1,0 +1,14 @@
+name: Build Docker and release on GHCR
+on:
+  push
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push the image
+        run : |
+          docker login --username laurawebdev --password ${{ secrets.GH_PAT }} ghcr.io
+          docker build . --tag ghcr.io/laurawebdev/khid-docker:latest
+          docker push ghcr.io/laurawebdev/khid-docker:latest
