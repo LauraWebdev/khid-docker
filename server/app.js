@@ -1,9 +1,20 @@
 const express = require('express');
 const path = require("path");
+const cors = require('cors');
 const listEndpoints = require('express-list-endpoints');
 
+const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(process.cwd(), '..');
+const REQUEST_TIMEOUT = process.env.REQUEST_TIMEOUT || 30000;
+
+console.log("[KHID WebUI] Starting");
+console.info(`[KHID WebUI] OUTPUT_DIR: ${OUTPUT_DIR}`);
+console.info(`[KHID WebUI] REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}`);
+
 const app = express();
-app.use(express.json());
+app.use(express.json({
+
+}));
+app.use(cors());
 
 // Server Routes
 app.use('/api', require('./routes'));
@@ -19,5 +30,4 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(8080, () => console.log(`[KHID WebUI] Server started on port 8080`));

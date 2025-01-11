@@ -4,5 +4,9 @@ services:
       context: .
     environment:
       NODE_ENV: production
+      OUTPUT_DIR: "/output"
+      REQUEST_TIMEOUT: 30000
+    volumes:
+      - "./test:/output"
     ports:
       - "8080:8080"

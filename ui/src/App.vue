@@ -3,25 +3,15 @@
 
     <main>
         <Wrapper class="gap-5">
-            <Card>
-                <CardContent class="p-6 flex gap-2">
-                    <Input v-model="urlOrSlug" placeholder="Enter URL or album ID" />
-                    <Button @click="loadAlbum">
-                        <span>Load Album</span>
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader class="text-lg font-bold">Queue</CardHeader>
-                <CardContent>
-                    Content Here
-                </CardContent>
-                <CardFooter class="flex gap-2 justify-end">
-                    <Button variant="ghost">
-                        <span>Clear Queue</span>
-                    </Button>
-                </CardFooter>
-            </Card>
+            <SoundtrackMetadataForm
+                @soundtrack-changed="onSoundtrackChanged"
+                @soundtrack-loaded="onSoundtrackLoaded"
+            />
+            <SoundtrackMetadata
+                :soundtrack="soundtrack"
+                @soundtrack-add-to-queue="onSoundtrackAddToQueue"
+            />
+            <SoundtrackQueue />
         </Wrapper>
     </main>
 </template>
@@ -29,15 +19,34 @@
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
 import Wrapper from "@/components/Wrapper.vue";
-import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card/index.js";
-import {Button} from "@/components/ui/button/index.js";
-import {Input} from "@/components/ui/input/index.js";
 import {ref} from "vue";
+import SoundtrackMetadataForm from "@/components/SoundtrackMetadataForm.vue";
+import SoundtrackMetadata from "@/components/SoundtrackMetadata.vue";
+import SoundtrackQueue from "@/components/SoundtrackQueue.vue";
 
-const urlOrSlug = ref("https://downloads.khinsider.com/game-soundtracks/album/portal");
+const soundtrack = ref(null);
 
-function loadAlbum() {
-    console.log(urlOrSlug.value);
+function onSoundtrackChanged() {
+    soundtrack.value = null;
+}
+
+function onSoundtrackLoaded(loadedSoundtrack) {
+    soundtrack.value = loadedSoundtrack;
+}
+
+async function onSoundtrackAddToQueue(queueItem) {
+    soundtrack.value = null;
+
+    let response = await fetch('http://localhost:8080/api/queue/add', {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(queueItem)
+    });
+    let json = response.json();
+
+    console.log(json);
 }
 </script>
 

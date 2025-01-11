@@ -1,8 +1,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+const REQUEST_TIMEOUT = process.env.REQUEST_TIMEOUT || 30000;
+
 async function getSoundtrackMeta(urlOrSlug) {
-    console.log(`[DownloadQueue] GetSoundtrackMeta: ${urlOrSlug}`);
+    console.log(`[GetSoundtrackMeta] ${urlOrSlug}`);
 
     // Build the album URL
     const albumUrl = urlOrSlug.startsWith("https://downloads.khinsider.com")
@@ -11,28 +13,30 @@ async function getSoundtrackMeta(urlOrSlug) {
 
     try {
         // Fetch the album webpage
-        const response = await axios.get(albumUrl);
+        const response = await axios.get(albumUrl, {
+            timeout: REQUEST_TIMEOUT,
+        });
         const html = response.data;
         const $ = cheerio.load(html);
 
         // Check if the soundtrack page exists
         const pageTitle = $("head > title").text();
         if (pageTitle === "Error") {
-            console.log("[DownloadQueue] Soundtrack does not exist!");
+            console.log("[GetSoundtrackMeta] Soundtrack does not exist!");
             return null;
         }
 
         // Retrieve the album title
         const albumTitle = $("#pageContent > h2").first().text().trim();
-        console.log(`[DownloadQueue] Soundtrack Name: ${albumTitle}`);
+        console.log(`[GetSoundtrackMeta] Soundtrack Name: ${albumTitle}`);
 
         // Initialize the soundtrack object
         const soundtrack = {
-            Url: albumUrl,
-            Title: albumTitle,
-            Slug: albumUrl.replace("https://downloads.khinsider.com/game-soundtracks/album/", ""),
-            Formats: [],
-            Songs: []
+            url: albumUrl,
+            title: albumTitle,
+            slug: albumUrl.replace("https://downloads.khinsider.com/game-soundtracks/album/", ""),
+            formats: [],
+            songs: []
         };
 
         // File Formats
@@ -48,10 +52,10 @@ async function getSoundtrackMeta(urlOrSlug) {
 
             // Exclude non-format headers
             if (!["", "&nbsp;", "CD", "#", "Song Name"].includes(headerText)) {
-                soundtrack.Formats.push(headerText.toLowerCase());
+                soundtrack.formats.push(headerText.toLowerCase());
             }
         });
-        console.log(`[DownloadQueue] Formats: ${soundtrack.Formats.join(", ")}`);
+        console.log(`[GetSoundtrackMeta] Formats: ${soundtrack.formats.join(", ")}`);
 
         // Determine the title column index
         let titleColumn = 2;
@@ -66,17 +70,17 @@ async function getSoundtrackMeta(urlOrSlug) {
             if (songAnchor.length) {
                 const href = songAnchor.attr("href");
                 const song = {
-                    Title: songAnchor.text().trim(),
-                    Url: `https://downloads.khinsider.com${href}`
+                    title: songAnchor.text().trim(),
+                    url: `https://downloads.khinsider.com${href}`
                 };
-                soundtrack.Songs.push(song);
+                soundtrack.songs.push(song);
             }
         });
-        console.log(`[DownloadQueue] Songs: ${soundtrack.Songs.length}`);
+        console.log(`[GetSoundtrackMeta] Songs: ${soundtrack.songs.length}`);
 
         return soundtrack;
     } catch (error) {
-        console.error(`[DownloadQueue] Error: ${error.message}`);
+        console.error(`[GetSoundtrackMeta] Error: ${error.message}`);
         return null;
     }
 }

@@ -4,8 +4,6 @@ import autoprefixer from 'autoprefixer';
 import tailwind from 'tailwindcss';
 import { fileURLToPath, URL } from 'node:url';
 
-console.log(new URL('./src', import.meta.url));
-
 // https://vite.dev/config/
 export default defineConfig({
   css: {

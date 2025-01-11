@@ -16,7 +16,7 @@ const props = defineProps({
   <Primitive
     :as="as"
     :as-child="asChild"
-    :class="cn(buttonVariants({ variant, size }), props.class)"
+    :class="cn(buttonVariants({ variant, size }), props.class, 'flex gap-2 items-center')"
   >
     <slot />
   </Primitive>
