@@ -28,7 +28,7 @@ const emit = defineEmits([
     'soundtrackLoaded'
 ]);
 
-const urlOrSlug = ref("https://downloads.khinsider.com/game-soundtracks/album/portal");
+const urlOrSlug = ref("");
 const isLoading = ref(false);
 
 async function loadAlbum() {
