@@ -37,7 +37,7 @@ function onSoundtrackLoaded(loadedSoundtrack) {
 async function onSoundtrackAddToQueue(queueItem) {
     soundtrack.value = null;
 
-    let response = await fetch('http://localhost:8080/api/queue/add', {
+    let response = await fetch('/api/queue/add', {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'

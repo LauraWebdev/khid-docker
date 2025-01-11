@@ -83,21 +83,21 @@ onMounted(() => {
 });
 
 async function clearDone() {
-    let response = await fetch('http://localhost:8080/api/queue/clearDone');
+    let response = await fetch('/api/queue/clearDone');
     let json = await response.json();
 
     checkQueue();
 }
 
 async function retryFailed() {
-    let response = await fetch('http://localhost:8080/api/queue/retryFailed');
+    let response = await fetch('/api/queue/retryFailed');
     let json = await response.json();
 
     checkQueue();
 }
 
 async function checkQueue() {
-    let response = await fetch('http://localhost:8080/api/queue');
+    let response = await fetch('/api/queue');
     let json = await response.json();
     let data = json.data;
 
