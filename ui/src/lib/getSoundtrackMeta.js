@@ -1,6 +1,8 @@
+import {API_BASE_URL} from "../../env.js";
+
 async function getSoundtrackMeta(urlOrSlug) {
-    let response = await fetch("/api/soundtrack/", {
-        method: "POST",
+    let response = await fetch(API_BASE_URL + '/api/soundtrack/', {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },

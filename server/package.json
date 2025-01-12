@@ -18,7 +18,8 @@
     "ffmetadata": "^1.7.0",
     "ffmpeg-static": "^5.2.0",
     "jsdom": "^26.0.0",
-    "music-metadata": "^10.6.5"
+    "music-metadata": "^10.6.5",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

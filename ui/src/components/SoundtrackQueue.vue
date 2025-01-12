@@ -66,6 +66,7 @@ import {Badge} from "@/components/ui/badge/index.js";
 import {onMounted, ref} from "vue";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table/index.js";
 import {Progress} from "@/components/ui/progress/index.js";
+import {API_BASE_URL} from "../../env.js";
 
 const countTotal = ref(0);
 const countQueued = ref(0);
@@ -83,21 +84,21 @@ onMounted(() => {
 });
 
 async function clearDone() {
-    let response = await fetch('/api/queue/clearDone');
+    let response = await fetch(API_BASE_URL + '/api/queue/clearDone');
     let json = await response.json();
 
     checkQueue();
 }
 
 async function retryFailed() {
-    let response = await fetch('/api/queue/retryFailed');
+    let response = await fetch(API_BASE_URL + '/api/queue/retryFailed');
     let json = await response.json();
 
     checkQueue();
 }
 
 async function checkQueue() {
-    let response = await fetch('/api/queue');
+    let response = await fetch(API_BASE_URL + '/api/queue');
     let json = await response.json();
     let data = json.data;
 

@@ -23,6 +23,7 @@ import {ref} from "vue";
 import SoundtrackMetadataForm from "@/components/SoundtrackMetadataForm.vue";
 import SoundtrackMetadata from "@/components/SoundtrackMetadata.vue";
 import SoundtrackQueue from "@/components/SoundtrackQueue.vue";
+import {API_BASE_URL} from "../env.js";
 
 const soundtrack = ref(null);
 
@@ -37,7 +38,7 @@ function onSoundtrackLoaded(loadedSoundtrack) {
 async function onSoundtrackAddToQueue(queueItem) {
     soundtrack.value = null;
 
-    let response = await fetch('/api/queue/add', {
+    let response = await fetch(API_BASE_URL + '/api/queue/add', {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
