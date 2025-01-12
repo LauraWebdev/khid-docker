@@ -144,6 +144,15 @@ function addToDownloadQueue() {
     };
 
     emit('soundtrackAddToQueue', soundtrack);
+
+    selectedFormat.value = 'mp3';
+    overrideArtistActive.value = false;
+    overrideArtist.value = "";
+    overrideGenreActive.value = false;
+    overrideGenre.value = "";
+    overrideAlbumActive.value = false;
+    overrideAlbum.value = "";
+    excludedTracks.value = [];
 }
 </script>
 

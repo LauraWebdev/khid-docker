@@ -35,8 +35,12 @@ async function loadAlbum() {
     isLoading.value = true;
     emit('soundtrackChanged', urlOrSlug.value);
 
-    let soundtrack = await getSoundtrackMeta(urlOrSlug.value);
-    emit('soundtrackLoaded', soundtrack);
+    try {
+        let soundtrack = await getSoundtrackMeta(urlOrSlug.value);
+        emit('soundtrackLoaded', soundtrack);
+    } catch(err) {
+        console.error(err);
+    }
     isLoading.value = false;
 }
 </script>
