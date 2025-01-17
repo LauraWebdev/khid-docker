@@ -1,6 +1,6 @@
 const express = require('express');
 const {getSoundtrackMeta} = require("../../modules/getSoundtrackMeta");
-const {getSoundtrackCover} = require("../../modules/getSoundtrackCover");
+const {getSoundtrackCovers} = require("../../modules/getSoundtrackCovers");
 const Router = express.Router;
 
 const router = new Router();
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     });
 });
 
-router.post('/cover', async (req, res) => {
+router.post('/covers', async (req, res) => {
     if (req.body.urlOrSlug === undefined) {
         return res.json({
             status: 400,
@@ -35,11 +35,11 @@ router.post('/cover', async (req, res) => {
         });
     }
 
-    let soundtrackCover = await getSoundtrackCover(req.body.urlOrSlug);
+    let soundtrackCovers = await getSoundtrackCovers(req.body.urlOrSlug);
 
     res.json({
         status: 200,
-        data: soundtrackCover
+        data: soundtrackCovers
     });
 });
 

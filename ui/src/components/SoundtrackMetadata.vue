@@ -49,7 +49,34 @@
                     <div class="grid grid-cols-[auto_1fr_3fr] gap-2 items-center">
                         <Switch :checked="overrideAlbumActive" @update:checked="toggleOverrideAlbumActive" />
                         <Label>Override Album</Label>
-                        <Input v-model="overrideAlbum" :disabled="!overrideAlbumActive" />
+                        <Input v-model="overrideAlbum" :placeholder="soundtrack.title" :disabled="!overrideAlbumActive" />
+                    </div>
+
+                    <div class="grid grid-cols-[auto_1fr_3fr] gap-2 items-center">
+                        <Switch :checked="overrideCoverActive" @update:checked="(checked) => overrideCoverActive = checked" />
+                        <Label>Override Cover</Label>
+                        <div class="flex items-center justify-center h-16" v-if="overrideCoversLoading">
+                            <RadialLoader />
+                        </div>
+                        <div :class="`flex flex-wrap gap-2 ${!overrideCoverActive ? 'opacity-40' : ''}`" v-else>
+                            <button
+                                v-for="(cover, n) in soundtrackCovers"
+                                :key="n"
+                                :class="`cover-item ${n === overrideCoverSelected ? 'outline' : ''}`"
+                                :disabled="!overrideCoverActive"
+                                @click="() => selectOverrideCover(n)"
+                            >
+                                <img :src="cover.thumbnail" alt="Cover" class="object-cover w-full h-full" />
+                            </button>
+                            <button :class="`cover-item bg-muted ${overrideCoverSelected === -1 ? 'outline' : ''}`"
+                                :disabled="!overrideCoverActive"
+                                @click="uploadCustomCover"
+                            >
+                                <i class="ri-image-line" v-if="overrideCoverFile === null"></i>
+                                <img :src="overrideCoverPreviewUrl" alt="Custom Cover" class="object-cover w-full h-full" v-else />
+                            </button>
+                            <input type="file" @input="selectCustomCover" class="hidden" ref="overrideCoverFileInput" />
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -83,15 +110,21 @@
 </template>
 
 <script setup>
-import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card/index.js";
+import {Card, CardContent, CardHeader} from "@/components/ui/card/index.js";
 import {Button} from "@/components/ui/button/index.js";
 import {Badge} from "@/components/ui/badge/index.js";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table/index.js";
 import {Switch} from "@/components/ui/switch/index.js";
-import {ref} from "vue";
+import {ref, watch} from "vue";
 import {Label} from "@/components/ui/label/index.js";
 import {Input} from "@/components/ui/input/index.js";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select/index.js";
+import getSoundtrackCovers from "@/lib/getSoundtrackCovers.js";
+import RadialLoader from "@/components/RadialLoader.vue";
+
+const allowedFileTypes = [
+    'image/jpeg', 'image/png'
+];
 
 const emit = defineEmits([
     'soundtrackAddToQueue'
@@ -106,6 +139,13 @@ const overrideGenreActive = ref(false);
 const overrideGenre = ref("");
 const overrideAlbumActive = ref(false);
 const overrideAlbum = ref("");
+const overrideCoversLoading = ref(false);
+const overrideCover = ref('');
+const overrideCoverSelected = ref(null);
+const overrideCoverActive = ref(false);
+const overrideCoverFile = ref(null);
+const overrideCoverFileInput = ref(null);
+const overrideCoverPreviewUrl = ref(null);
 
 const props = defineProps({
     soundtrack: {
@@ -113,6 +153,8 @@ const props = defineProps({
         default: null
     },
 });
+
+const soundtrackCovers = ref([]);
 
 function toggleExclusion(track) {
     if (excludedTracks.value.includes(track)) {
@@ -132,15 +174,25 @@ function toggleOverrideAlbumActive(checked) {
     }
 }
 
-function addToDownloadQueue() {
+async function addToDownloadQueue() {
     let soundtrack = JSON.parse(JSON.stringify(props.soundtrack));
     soundtrack.songs = soundtrack.songs.filter((track) => !excludedTracks.value.includes(track.url));
+
+    let soundtrackCover = false;
+    if(overrideCoverActive.value && overrideCoverSelected.value !== null) {
+        if(overrideCoverSelected.value !== -1) {
+            soundtrackCover = soundtrackCovers.value[overrideCoverSelected.value].full;
+        } else {
+            soundtrackCover = await blobToBase64(overrideCoverFile.value);
+        }
+    }
 
     soundtrack.format = selectedFormat.value;
     soundtrack.overrides = {
         artist: overrideArtistActive.value ? overrideArtist.value : false,
         genre: overrideGenreActive.value ? overrideGenre.value : false,
-        album: overrideAlbumActive.value ? overrideAlbum.value : false
+        album: overrideAlbumActive.value ? overrideAlbum.value : false,
+        cover: soundtrackCover,
     };
 
     emit('soundtrackAddToQueue', soundtrack);
@@ -152,13 +204,70 @@ function addToDownloadQueue() {
     overrideGenre.value = "";
     overrideAlbumActive.value = false;
     overrideAlbum.value = "";
+    overrideCoverActive.value = false;
+    overrideCover.value = "";
+    overrideCoverSelected.value = null;
+    overrideCoverFile.value = null;
+    overrideCoverPreviewUrl.value = null;
+
     excludedTracks.value = [];
+    soundtrackCovers.value = [];
 }
+
+async function loadSoundtrackCovers() {
+    overrideCoversLoading.value = true;
+
+    try {
+        soundtrackCovers.value = await getSoundtrackCovers(props.soundtrack.url);
+        overrideCoverSelected.value = null;
+    } catch(err) {
+        console.error(err);
+    }
+    overrideCoversLoading.value = false;
+}
+
+function selectOverrideCover(n) {
+    overrideCoverSelected.value = n;
+}
+
+function uploadCustomCover() {
+    overrideCoverFileInput.value.click();
+}
+
+function selectCustomCover(event) {
+    overrideCoverFile.value = event.target.files[0] || null;
+
+    if(overrideCoverFile.value !== null && allowedFileTypes.includes(overrideCoverFile.value.type)) {
+        selectOverrideCover(-1);
+        overrideCoverPreviewUrl.value = URL.createObjectURL(overrideCoverFile.value);
+    }
+}
+
+function blobToBase64 (blob) {
+    return new Promise(resolvePromise => {
+        const reader = new FileReader();
+        reader.onload = () => resolvePromise(reader.result);
+        reader.readAsDataURL(blob);
+    });
+}
+
+watch(() => props.soundtrack, (newSoundtrack) => {
+    if(newSoundtrack !== null) {
+        loadSoundtrackCovers();
+    }
+});
 </script>
 
 <style lang="scss" scoped>
 .formats {
     @apply flex gap-1 items-center;
+}
+.cover-item {
+    @apply w-16 h-16 rounded-sm overflow-hidden cursor-pointer hover:enabled:opacity-60 transition-all outline-2;
+
+    & i {
+        @apply text-2xl;
+    }
 }
 .content {
     @apply flex flex-col gap-4;
