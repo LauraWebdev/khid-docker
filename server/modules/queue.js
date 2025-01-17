@@ -27,23 +27,11 @@ class DownloadQueue {
             currentItem.state = 'downloading';
             console.log(`[DownloadQueue] Downloading: ${currentItem.album} - ${currentItem.title}`);
 
+            let soundtrackDir = path.join(OUTPUT_DIR, currentItem.slug);
             if(!fs.existsSync(OUTPUT_DIR)) {
                 console.error(`[DownloadQueue] Output directory does not exist: ${OUTPUT_DIR}`);
                 currentItem.state = 'failed';
                 continue;
-            }
-
-            let soundtrackDir = path.join(OUTPUT_DIR, currentItem.slug);
-            if(!fs.existsSync(soundtrackDir)) {
-                try {
-                    fs.mkdirSync(soundtrackDir);
-                    console.log("[DownloadQueue] Created soundtrack folder");
-                } catch (err) {
-                    console.error(`[DownloadQueue] Couldn't create soundtrack folder`);
-                    console.error(err);
-                    currentItem.state = 'failed';
-                    continue;
-                }
             }
 
             let response = await axios.get(currentItem.url, {
@@ -67,33 +55,32 @@ class DownloadQueue {
                 continue;
             }
 
-            let downloadPath = path.join(soundtrackDir, `${sanitizeFilename(currentItem.title)}.${currentItem.format}`);
-            let downloadResponse = await axios({
-                method: 'get',
-                url: downloadLink,
-                responseType: 'stream',
-                timeout: REQUEST_TIMEOUT,
-            });
-
-            let totalLength = downloadResponse.headers['content-length'];
-            let downloadedLength = 0;
-            let percentCompleted = 0;
-            downloadResponse.data.on('data', (chunk) => {
-                downloadedLength += chunk.length;
-                percentCompleted = (downloadedLength / totalLength) * 100;
-                currentItem.progress = percentCompleted;
-            });
-
-            const downloadPromise = new Promise((resolve, reject) => {
-                downloadResponse.data.pipe(fs.createWriteStream(downloadPath))
-                    .on('finish', resolve)
-                    .on('error', reject);
-            });
-
             try {
+                let downloadPath = path.join(soundtrackDir, `${sanitizeFilename(currentItem.title)}.${currentItem.format}`);
+                let downloadResponse = await axios({
+                    method: 'get',
+                    url: downloadLink,
+                    responseType: 'stream',
+                    timeout: REQUEST_TIMEOUT,
+                });
+
+                let totalLength = downloadResponse.headers['content-length'];
+                let downloadedLength = 0;
+                let percentCompleted = 0;
+                downloadResponse.data.on('data', (chunk) => {
+                    downloadedLength += chunk.length;
+                    percentCompleted = (downloadedLength / totalLength) * 100;
+                    currentItem.progress = percentCompleted;
+                });
+
+                const downloadPromise = new Promise((resolve, reject) => {
+                    downloadResponse.data.pipe(fs.createWriteStream(downloadPath))
+                        .on('finish', resolve)
+                        .on('error', reject);
+                });
                 await downloadPromise;
 
-                if(currentItem.overrideArtist || currentItem.overrideGenre) {
+                if(currentItem.overrideArtist || currentItem.overrideGenre || currentItem.overrideAlbum || currentItem.overrideCover) {
                     let newMetadata = {};
                     if(currentItem.overrideArtist) {
                         newMetadata.artist = currentItem.overrideArtist;
@@ -105,9 +92,28 @@ class DownloadQueue {
                         newMetadata.genre = currentItem.overrideGenre;
                     }
 
+                    let attachments = [];
+                    if(currentItem.overrideCover) {
+                        const coverFilePathJpg = path.join(soundtrackDir, "cover.jpg");
+                        const coverFilePathPng = path.join(soundtrackDir, "cover.png");
+
+                        if(fs.existsSync(coverFilePathJpg)) {
+                            attachments = [
+                                coverFilePathJpg
+                            ];
+                        }
+                        if(fs.existsSync(coverFilePathPng)) {
+                            attachments = [
+                                coverFilePathPng
+                            ];
+                        }
+                    }
+
                     ffmetadata.setFfmpegPath(ffmpegPath);
                     const metadataPromise = new Promise((resolve, reject) => {
-                        ffmetadata.write(downloadPath, newMetadata, function(err, data) {
+                        ffmetadata.write(downloadPath, newMetadata, {
+                            attachments: attachments,
+                        }, function(err, data) {
                             if (err) {
                                 reject(err);
                             }
@@ -147,6 +153,57 @@ class DownloadQueue {
     }
 
     addToQueue(newItem) {
+        let soundtrackDir = path.join(OUTPUT_DIR, newItem.slug);
+        if(!fs.existsSync(soundtrackDir)) {
+            try {
+                fs.mkdirSync(soundtrackDir);
+                console.log("[DownloadQueue] Created soundtrack folder");
+            } catch (err) {
+                console.error(`[DownloadQueue] Couldn't create soundtrack folder`);
+                console.error(err);
+            }
+        }
+
+        const coverFilePathJpg = path.join(soundtrackDir, "cover.jpg");
+        const coverFilePathPng = path.join(soundtrackDir, "cover.png");
+        if (!fs.existsSync(coverFilePathJpg) && !fs.existsSync(coverFilePathPng)) {
+            const coverOverride = newItem.overrides.cover;
+
+            if (coverOverride && typeof coverOverride === "string") {
+                if (coverOverride.startsWith("http")) {
+                    const extension = coverOverride.endsWith(".png") ? "png" : "jpg";
+                    const coverFilePath = path.join(soundtrackDir, `cover.${extension}`);
+                    axios
+                        .get(coverOverride, { responseType: "stream" })
+                        .then((response) => {
+                            const writer = fs.createWriteStream(coverFilePath);
+                            response.data.pipe(writer);
+                            writer.on("finish", () => {
+                                console.log("[DownloadQueue] Cover image downloaded successfully");
+                            });
+                            writer.on("error", (err) => {
+                                console.error("[DownloadQueue] Error saving cover image:", err);
+                            });
+                        })
+                        .catch((err) => {
+                            console.error("[DownloadQueue] Failed to download cover image:", err);
+                        });
+                } else if (coverOverride.startsWith("data:image")) {
+                    const base64Data = coverOverride.split(",")[1];
+                    const fileExtension = coverOverride.startsWith("data:image/png") ? "png" : "jpg";
+                    const coverFilePath = path.join(soundtrackDir, `cover.${fileExtension}`);
+                    try {
+                        fs.writeFileSync(coverFilePath, base64Data, { encoding: "base64" });
+                        console.log("[DownloadQueue] Cover image saved successfully from Base64 data");
+                    } catch (err) {
+                        console.error("[DownloadQueue] Error saving Base64 cover image:", err);
+                    }
+                } else {
+                    console.warn("[DownloadQueue] Cover override is neither a valid URL nor Base64.");
+                }
+            }
+        }
+
         newItem.songs.forEach(song => {
             let queueItem = {
                 album: newItem.title,
@@ -157,6 +214,7 @@ class DownloadQueue {
                 overrideArtist: newItem.overrides.artist,
                 overrideGenre: newItem.overrides.genre,
                 overrideAlbum: newItem.overrides.album,
+                overrideCover: !!newItem.overrides.cover,
                 state: "queued",
                 progress: 0,
             };

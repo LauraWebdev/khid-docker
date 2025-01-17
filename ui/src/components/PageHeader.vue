@@ -7,6 +7,7 @@
             </div>
 
             <nav>
+                <ServerHeartbeat />
                 <ThemeSwitcher />
                 <Button as-child variant="ghost" size="icon">
                     <a href="https://github.com/LauraWebdev/khid-docker">
@@ -23,6 +24,7 @@ import Wrapper from "@/components/Wrapper.vue";
 import {Button} from "@/components/ui/button";
 import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
 import {Badge} from "@/components/ui/badge/index.js";
+import ServerHeartbeat from "@/components/ServerHeartbeat.vue";
 </script>
 
 <style lang="scss" scoped>
@@ -37,7 +39,7 @@ header {
         }
 
         & nav {
-            @apply flex gap-1;
+            @apply flex gap-1 items-center;
         }
     }
 }

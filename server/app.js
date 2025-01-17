@@ -12,7 +12,7 @@ console.info(`[KHID WebUI] REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}`);
 
 const app = express();
 app.use(express.json({
-
+    limit: '50mb'
 }));
 app.use(cors());
 

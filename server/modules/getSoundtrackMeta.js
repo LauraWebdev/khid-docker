@@ -1,15 +1,12 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const {getAlbumUrl} = require("./getAlbumUrl");
 
 const REQUEST_TIMEOUT = process.env.REQUEST_TIMEOUT || 30000;
 
 async function getSoundtrackMeta(urlOrSlug) {
     console.log(`[GetSoundtrackMeta] ${urlOrSlug}`);
-
-    // Build the album URL
-    const albumUrl = urlOrSlug.startsWith("https://downloads.khinsider.com")
-        ? urlOrSlug
-        : `https://downloads.khinsider.com/game-soundtracks/album/${urlOrSlug}`;
+    const albumUrl = getAlbumUrl(urlOrSlug);
 
     try {
         // Fetch the album webpage

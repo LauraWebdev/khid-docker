@@ -17,7 +17,7 @@ router.get('/', (req, res) => {
                 done: queue.getDone().length,
                 failed: queue.getFailed().length,
             },
-            queue: queue.queue,
+            queue: queue.queue
         },
     });
 });

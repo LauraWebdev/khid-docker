@@ -46,8 +46,6 @@ async function onSoundtrackAddToQueue(queueItem) {
         body: JSON.stringify(queueItem)
     });
     let json = response.json();
-
-    console.log(json);
 }
 </script>
 
