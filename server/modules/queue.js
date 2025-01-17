@@ -80,7 +80,7 @@ class DownloadQueue {
                 });
                 await downloadPromise;
 
-                if(currentItem.overrideArtist || currentItem.overrideGenre) {
+                if(currentItem.overrideArtist || currentItem.overrideGenre || currentItem.overrideAlbum || currentItem.overrideCover) {
                     let newMetadata = {};
                     if(currentItem.overrideArtist) {
                         newMetadata.artist = currentItem.overrideArtist;
@@ -92,9 +92,28 @@ class DownloadQueue {
                         newMetadata.genre = currentItem.overrideGenre;
                     }
 
+                    let attachments = [];
+                    if(currentItem.overrideCover) {
+                        const coverFilePathJpg = path.join(soundtrackDir, "cover.jpg");
+                        const coverFilePathPng = path.join(soundtrackDir, "cover.png");
+
+                        if(fs.existsSync(coverFilePathJpg)) {
+                            attachments = [
+                                coverFilePathJpg
+                            ];
+                        }
+                        if(fs.existsSync(coverFilePathPng)) {
+                            attachments = [
+                                coverFilePathPng
+                            ];
+                        }
+                    }
+
                     ffmetadata.setFfmpegPath(ffmpegPath);
                     const metadataPromise = new Promise((resolve, reject) => {
-                        ffmetadata.write(downloadPath, newMetadata, function(err, data) {
+                        ffmetadata.write(downloadPath, newMetadata, {
+                            attachments: attachments,
+                        }, function(err, data) {
                             if (err) {
                                 reject(err);
                             }
@@ -195,6 +214,7 @@ class DownloadQueue {
                 overrideArtist: newItem.overrides.artist,
                 overrideGenre: newItem.overrides.genre,
                 overrideAlbum: newItem.overrides.album,
+                overrideCover: !!newItem.overrides.cover,
                 state: "queued",
                 progress: 0,
             };
