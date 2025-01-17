@@ -38,7 +38,7 @@ async function checkHeartbeat() {
         let response = await fetch(API_BASE_URL + '/api/heartbeat/');
         let json = await response.json();
 
-        serverOnline.value = json?.status || false;
+        serverOnline.value = json?.status === 200 || false;
         serverUptime.value = Math.floor(json?.uptime ?? 0);
     } catch(err) {
         console.error(err);
